@@ -117,8 +117,11 @@ export function heroPreset(site) {
     };
   }
   if (mode === "nails") {
+    const useVerifiedCopy = site?.template?.useVerifiedNailsCopy === true;
     return {
-      emphasis: String(site?.master?.heroEmphasis || "эксперт по маникюру и педикюру").trim(),
+      emphasis: useVerifiedCopy
+        ? String(site?.master?.heroEmphasis || "эксперт по маникюру и педикюру").trim()
+        : "эксперт по маникюру и педикюру",
       copy: String(site?.master?.heroCopy || "").trim(),
     };
   }
@@ -176,7 +179,8 @@ export function aboutPreset(site) {
   }
 
   if (mode === "nails") {
-    const customLead = String(site?.master?.aboutLead || "").trim();
+    const useVerifiedCopy = site?.template?.useVerifiedNailsCopy === true;
+    const customLead = useVerifiedCopy ? String(site?.master?.aboutLead || "").trim() : "";
     return {
       lead: customLead || `Я ${name} — эксперт по маникюру и педикюру${experienceCopy}.`,
       paragraphs: [
