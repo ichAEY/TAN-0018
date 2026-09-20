@@ -118,7 +118,7 @@ export function heroPreset(site) {
   }
   if (mode === "nails") {
     return {
-      emphasis: "эксперт по маникюру и педикюру",
+      emphasis: String(site?.master?.heroEmphasis || "эксперт по маникюру и педикюру").trim(),
       copy: String(site?.master?.heroCopy || "").trim(),
     };
   }
@@ -176,8 +176,9 @@ export function aboutPreset(site) {
   }
 
   if (mode === "nails") {
+    const customLead = String(site?.master?.aboutLead || "").trim();
     return {
-      lead: `Я ${name} — эксперт по маникюру и педикюру${experienceCopy}.`,
+      lead: customLead || `Я ${name} — эксперт по маникюру и педикюру${experienceCopy}.`,
       paragraphs: [
         "Выполняю маникюр и педикюр, наращивание и коррекцию ногтей.",
         "Работаю со стерильными инструментами и уделяю внимание аккуратности, форме и качеству результата.",
