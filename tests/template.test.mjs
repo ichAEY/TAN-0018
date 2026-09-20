@@ -54,7 +54,7 @@ test("specialty hero copy is deterministic", () => {
     copy: "Проверенный текст мастера",
   });
   assert.equal(
-    heroPreset({ template: { specialty: "nails" }, master: { heroEmphasis: "эксперт по маникюру, педикюру и подологии", heroCopy: "" } }).emphasis,
+    heroPreset({ template: { specialty: "nails", useVerifiedNailsCopy: true }, master: { heroEmphasis: "эксперт по маникюру, педикюру и подологии", heroCopy: "" } }).emphasis,
     "эксперт по маникюру, педикюру и подологии",
   );
 });
