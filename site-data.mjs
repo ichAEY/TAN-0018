@@ -9,6 +9,7 @@ export default {
     specialty: "nails",
     bookingProvider: "Связь с мастером",
     reviewSource: "Яндекс Карты",
+    useVerifiedNailsCopy: true,
   },
 
   brand: {
