@@ -172,6 +172,7 @@ export default {
     ],
     translations: {
       en: {
+        "Светлана Антонова": "Svetlana Antonova",
         "мастер маникюра, педикюра и подологии": "manicure, pedicure and podology specialist",
         "эксперт по маникюру, педикюру и подологии": "manicure, pedicure and podology expert",
         "Маникюр, педикюр и подология": "Manicure, pedicure and podology",
