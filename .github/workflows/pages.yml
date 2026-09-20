@@ -22,7 +22,8 @@ jobs:
     outputs:
       pages-ready: ${{ steps.pages-check.outputs.enabled }}
     env:
-      NEXT_PUBLIC_BASE_PATH: /TAN-0018
+      NEXT_PUBLIC_BASE_PATH: ""
+      CUSTOM_DOMAIN_CANDIDATES: "svetlana-antonova.tanem.ru"
     steps:
       - uses: actions/checkout@v5
       - name: Checkout approved Hair decoration source
@@ -49,15 +50,32 @@ jobs:
       - name: Render production scenarios
         run: npm run qa:scenarios
       - id: pages-check
-        name: Check whether Pages is enabled
+        name: Enable Pages and custom domain
         env:
           GH_TOKEN: ${{ github.token }}
+        shell: bash
         run: |
-          if gh api "repos/${{ github.repository }}/pages" >/dev/null 2>&1; then
-            echo "enabled=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+          selected=""
+          for candidate in $CUSTOM_DOMAIN_CANDIDATES; do
+            cname="$(dig +short CNAME "$candidate" | tr '[:upper:]' '[:lower:]' | tail -n 1)"
+            if [ "$cname" = "ichaey.github.io." ]; then
+              selected="$candidate"
+              break
+            fi
+          done
+          if [ -z "$selected" ]; then
+            echo "::error::No configured TANEM domain found in: $CUSTOM_DOMAIN_CANDIDATES"
+            exit 1
           fi
+          echo "Using custom domain: $selected"
+          if gh api "repos/${{ github.repository }}/pages" >/dev/null 2>&1; then
+            gh api --method PUT "repos/${{ github.repository }}/pages" -f build_type=workflow -f cname="$selected" >/dev/null
+          else
+            gh api --method POST "repos/${{ github.repository }}/pages" -f build_type=workflow >/dev/null
+            gh api --method PUT "repos/${{ github.repository }}/pages" -f cname="$selected" >/dev/null
+          fi
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
       - if: steps.pages-check.outputs.enabled == 'true'
         uses: actions/configure-pages@v5
       - if: steps.pages-check.outputs.enabled != 'true'
