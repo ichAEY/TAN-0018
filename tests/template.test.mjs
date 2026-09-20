@@ -43,7 +43,7 @@ test("specialty hero copy is deterministic", () => {
   };
   const nails = {
     template: { specialty: "nails" },
-    master: { heroEmphasis: "ignored", heroCopy: "Проверенный текст мастера" },
+    master: { heroEmphasis: "", heroCopy: "Проверенный текст мастера" },
   };
   assert.deepEqual(heroPreset(hair), {
     emphasis: "эксперт по волосам",
@@ -53,6 +53,10 @@ test("specialty hero copy is deterministic", () => {
     emphasis: "эксперт по маникюру и педикюру",
     copy: "Проверенный текст мастера",
   });
+  assert.equal(
+    heroPreset({ template: { specialty: "nails" }, master: { heroEmphasis: "эксперт по маникюру, педикюру и подологии", heroCopy: "" } }).emphasis,
+    "эксперт по маникюру, педикюру и подологии",
+  );
 });
 
 test("category mechanics stay 1 / 2 / 3+ without a hard cap", () => {
