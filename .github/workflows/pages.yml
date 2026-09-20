@@ -20,10 +20,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
-      pages-ready: ${{ steps.pages-check.outputs.enabled }}
+      pages-ready: ${{ steps.pages-config.outputs.enabled }}
+      custom-domain: ${{ steps.pages-config.outputs.custom-domain }}
     env:
-      NEXT_PUBLIC_BASE_PATH: ""
-      CUSTOM_DOMAIN: "svetlana.tanem.ru"
+      EXPECTED_CUSTOM_DOMAIN: "svetlana.tanem.ru"
     steps:
       - uses: actions/checkout@v5
       - name: Checkout approved Hair decoration source
@@ -40,6 +40,30 @@ jobs:
           cp .tanem-source-hair/public/assets/yulia/tools/hero.png public/assets/template/hair-tools.png
           rm -rf .tanem-source-hair
           test -s public/assets/template/hair-tools.png
+      - id: pages-config
+        name: Detect Pages custom domain
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! gh api "repos/${{ github.repository }}/pages" >/tmp/pages.json 2>/dev/null; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "custom-domain=" >> "$GITHUB_OUTPUT"
+            echo "base-path=/TAN-0018" >> "$GITHUB_OUTPUT"
+            echo "::notice::GitHub Pages is not enabled for this repository."
+            exit 0
+          fi
+          current="$(jq -r '.cname // ""' /tmp/pages.json)"
+          echo "Pages custom domain: ${current:-<none>}"
+          echo "Expected custom domain: $EXPECTED_CUSTOM_DOMAIN"
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
+          echo "custom-domain=$current" >> "$GITHUB_OUTPUT"
+          if [ "$current" = "$EXPECTED_CUSTOM_DOMAIN" ]; then
+            echo "base-path=" >> "$GITHUB_OUTPUT"
+          else
+            echo "base-path=/TAN-0018" >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/setup-node@v5
         with:
           node-version: 24
@@ -48,21 +72,18 @@ jobs:
       - run: npm run lint
       - run: npm test
       - name: Render production scenarios
-        run: npm run qa:scenarios
-      - id: pages-check
-        name: Enable Pages and custom domain
         env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          if ! gh api "repos/${{ github.repository }}/pages" >/dev/null 2>&1; then
-            printf '{"build_type":"workflow"}' | gh api --method POST "repos/${{ github.repository }}/pages" --input - >/dev/null
-          fi
-          printf '{"build_type":"workflow","cname":"%s"}' "$CUSTOM_DOMAIN"             | gh api --method PUT "repos/${{ github.repository }}/pages" --input - >/dev/null
-          echo "enabled=true" >> "$GITHUB_OUTPUT"
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v4
+          NEXT_PUBLIC_BASE_PATH: ${{ steps.pages-config.outputs.base-path }}
+        run: npm run qa:scenarios
+      - name: Build production site
+        if: steps.pages-config.outputs.enabled == 'true'
+        env:
+          NEXT_PUBLIC_BASE_PATH: ${{ steps.pages-config.outputs.base-path }}
+        run: npm run build
+      - if: steps.pages-config.outputs.enabled == 'true'
+        uses: actions/configure-pages@v5
+      - if: steps.pages-config.outputs.enabled == 'true'
+        uses: actions/upload-pages-artifact@v4
         with:
           path: out
 
