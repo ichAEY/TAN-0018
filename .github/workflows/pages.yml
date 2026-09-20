@@ -23,7 +23,7 @@ jobs:
       pages-ready: ${{ steps.pages-check.outputs.enabled }}
     env:
       NEXT_PUBLIC_BASE_PATH: ""
-      CUSTOM_DOMAIN_CANDIDATES: "svetlana-antonova.tanem.ru"
+      CUSTOM_DOMAIN: "svetlana.tanem.ru"
     steps:
       - uses: actions/checkout@v5
       - name: Checkout approved Hair decoration source
@@ -56,33 +56,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          selected=""
-          for candidate in $CUSTOM_DOMAIN_CANDIDATES; do
-            cname="$(dig +short CNAME "$candidate" | tr '[:upper:]' '[:lower:]' | tail -n 1)"
-            ips="$(dig +short A "$candidate" | tr '\n' ' ')"
-            if [ "$cname" = "ichaey.github.io." ] || echo "$ips" | grep -Eq '185\.199\.(108|109|110|111)\.153'; then
-              selected="$candidate"
-              break
-            fi
-          done
-          if [ -z "$selected" ]; then
-            echo "::error::No configured TANEM domain found in: $CUSTOM_DOMAIN_CANDIDATES"
-            exit 1
+          if ! gh api "repos/${{ github.repository }}/pages" >/dev/null 2>&1; then
+            printf '{"build_type":"workflow"}' | gh api --method POST "repos/${{ github.repository }}/pages" --input - >/dev/null
           fi
-          echo "Using custom domain: $selected"
-          if gh api "repos/${{ github.repository }}/pages" >/dev/null 2>&1; then
-            gh api --method PUT "repos/${{ github.repository }}/pages" -f build_type=workflow -f cname="$selected" >/dev/null
-          else
-            gh api --method POST "repos/${{ github.repository }}/pages" -f build_type=workflow >/dev/null
-            gh api --method PUT "repos/${{ github.repository }}/pages" -f cname="$selected" >/dev/null
-          fi
+          printf '{"build_type":"workflow","cname":"%s"}' "$CUSTOM_DOMAIN"             | gh api --method PUT "repos/${{ github.repository }}/pages" --input - >/dev/null
           echo "enabled=true" >> "$GITHUB_OUTPUT"
-      - if: steps.pages-check.outputs.enabled == 'true'
-        uses: actions/configure-pages@v5
-      - if: steps.pages-check.outputs.enabled != 'true'
-        run: echo "::notice::Quality checks passed. Enable Settings → Pages → GitHub Actions to publish the preview."
-      - if: steps.pages-check.outputs.enabled == 'true'
-        uses: actions/upload-pages-artifact@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
         with:
           path: out
 
