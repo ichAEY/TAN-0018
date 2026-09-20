@@ -59,7 +59,8 @@ jobs:
           selected=""
           for candidate in $CUSTOM_DOMAIN_CANDIDATES; do
             cname="$(dig +short CNAME "$candidate" | tr '[:upper:]' '[:lower:]' | tail -n 1)"
-            if [ "$cname" = "ichaey.github.io." ]; then
+            ips="$(dig +short A "$candidate" | tr '\n' ' ')"
+            if [ "$cname" = "ichaey.github.io." ] || echo "$ips" | grep -Eq '185\.199\.(108|109|110|111)\.153'; then
               selected="$candidate"
               break
             fi
